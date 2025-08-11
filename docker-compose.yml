@@ -1,0 +1,45 @@
+# apache PHP + mariadb php:8.2-apache
+version: '3'
+services:
+  roxwood_pwr:
+    image: php:8.2-apache
+    # $mysqli = new mysqli(env("DB_HOST"), env("DB_USER"), env("DB_PASS"), env("DB_NAME"));
+    environment:
+      HOST: "flashfa_roxwood_pwr.digitarucamera.eu"
+      DB_HOST: roxwood_pwr_db
+      DB_USER: user
+      DB_PASS: password
+      DB_NAME: db
+    ports:
+      - "80:80"
+    volumes:
+      - ./www:/var/www/html
+    restart: always
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.portfolio.loadbalancer.server.port=80
+      - traefik.http.routers.portfolio-http.entrypoints=http
+      - traefik.http.routers.portfolio-http.rule=Host(`portfolio.sorlinv.fr`)
+      - traefik.http.middlewares.https-redirect.redirectscheme.scheme=https
+      - traefik.http.middlewares.https-redirect.redirectscheme.permanent=true
+      - traefik.http.routers.portfolio-http.middlewares=https-redirect@docker
+      - traefik.http.routers.portfolio-https.entrypoints=https
+      - traefik.http.routers.portfolio-https.rule=Host(`portfolio.sorlinv.fr`)
+      - traefik.http.routers.portfolio-https.tls=true
+      - traefik.http.routers.portfolio-https.tls.certresolver=letsencrypt
+    networks:
+      - traefik
+
+  roxwood_pwr_db:
+    image: mariadb:latest
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+
+networks:
+  traefik:
+    external:
+      name: web_traefik
