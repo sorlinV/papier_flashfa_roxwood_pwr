@@ -1,3 +1,8 @@
+<?php
+  header("Location: dashboard.php?discord=" . $_GET["discord"]);
+  exit();
+?>
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>

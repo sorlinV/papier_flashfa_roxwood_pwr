@@ -1,5 +1,5 @@
 <?php
-if (isset($_POST['sql']) && isset($_POST['force_array'])) {
+if (isset($_POST['sql'])) {
     $sql = $_POST['sql'];
 
     $mysqli = new mysqli(
@@ -61,11 +61,7 @@ if (isset($_POST['sql']) && isset($_POST['force_array'])) {
         while ($row = $result->fetch_assoc()) {
             $json[] = $row;
         }
-
-        if ($_POST['force_array'] == false && count($json) === 1) {
-            $json = $json[0];
-        }
-
+        
         echo json_encode($json);
     } else {
         // Si c'est un INSERT, UPDATE, DELETE...

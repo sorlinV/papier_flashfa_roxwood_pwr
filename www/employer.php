@@ -27,7 +27,7 @@
       <h2 class="mb-4"><i class="mdi mdi-account-group"></i> Liste des Employés</h2>
       <users-week-table class="table-responsive"></users-week-table>
     </div>
-
+    <user-form></user-form>
     </main>
 
   </main>

@@ -13,10 +13,10 @@ export function htmlToArrayElement(html) {
 }
 
 export const LTD = {
-  "LTD Groove Street": 1,
-  "LTD Little Seoul": 2,
-  "LTD Sandy Shores": 3,
-  "LTD Roxwood": 4
+    "LTD Groove Street": 1,
+    "LTD Little Seoul": 2,
+    "LTD Sandy Shores": 3,
+    "LTD Roxwood": 4
 };
 export const GRADE = {
     "recolte_novice": 1,
@@ -38,12 +38,32 @@ export const GRADE = {
 export class API {
     static get_session() {
         let searchParams = new URLSearchParams(window.location.search);
-        let uuid = searchParams.get("discord");
-        return API.get_sql(`SELECT * FROM users WHERE discord_id = '${uuid}'`);
+        let discord_id = searchParams.get("discord");
+        return API.get_sql(`SELECT * FROM users WHERE discord_id = '${discord_id}'`);
     }
 
-    static add_user(discord_id, matricule, name, grade) {
-        let sql = `INSERT INTO users (discord_id, matricule, name, grade, date_entree, avertissements) VALUES ('${discord_id}', '${matricule}', '${name}', '${grade}', CURRENT_TIMESTAMP, 0);`;
+    static add_user(discord_id, matricule, tel, IBAN, name, grade) {
+        let sql = `INSERT INTO users (discord_id, matricule, tel, IBAN, name, grade, date_entree, avertissements) VALUES ('${discord_id}', '${matricule}', '${tel}', '${IBAN}', '${name}', '${grade}', CURRENT_TIMESTAMP, 0);`;
+        return API.get_sql(sql);
+    }
+    
+    static get_user_by_discord(discord_id) {
+        return API.get_sql(`SELECT * FROM users WHERE discord_id = '${discord_id}';`);
+    }
+
+    static update_user(discord_id, matricule, tel, IBAN, name, grade) {
+        return API.get_sql(`
+            UPDATE users
+            SET matricule = '${matricule}',
+                tel = '${tel}',
+                IBAN = '${IBAN}',
+                name = '${name}',
+                grade = '${grade}'
+            WHERE discord_id = '${discord_id}';
+        `);
+    }
+    static async delete_user(discord_id) {
+        const sql = `DELETE FROM users WHERE discord_id = '${discord_id}'`;
         return API.get_sql(sql);
     }
 
@@ -60,7 +80,10 @@ export class API {
     u.matricule,
     u.name,
     u.grade,
+    u.tel,
+    u.IBAN,
     u.avertissements,
+    u.discord_id,
     SUM(CASE WHEN d.type = 'bouteille_essence' THEN d.quantite ELSE 0 END) AS bouteille_essence,
     SUM(CASE WHEN d.type = 'bidon_sythese' THEN d.quantite ELSE 0 END) AS bidon_petrole_synt,
     SUM(CASE WHEN d.type = 'bidon_essence' THEN d.quantite ELSE 0 END) AS bidon_essence,
@@ -73,7 +96,7 @@ LEFT JOIN declarations d
     AND d.date_declaration < '${end_week}'
 GROUP BY u.id, u.date_entree, u.matricule, u.name, u.grade, u.avertissements
 ORDER BY u.grade ASC, u.date_entree ASC;`;
-        return API.get_sql(sql, true);
+        return API.get_sql(sql);
     }
 
     static get_deliveries_per_ltd_week(date) {
@@ -97,11 +120,10 @@ ORDER BY u.grade ASC, u.date_entree ASC;`;
     }
 
 
-    static get_sql(sql, force_array = false) {
+    static get_sql(sql) {
         return new Promise((resolve, reject) => {
             let form = new FormData();
             form.append('sql', sql);
-            form.append('force_array', force_array);
             return fetch(`/api/sqltojson.php`, {
                 method: 'POST',
                 body: form
