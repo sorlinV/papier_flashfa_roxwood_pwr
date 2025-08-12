@@ -4,5 +4,6 @@
     <a href="employer.php?discord=<?= $_GET["discord"] ?>" class="nav-link"><i class="mdi mdi-account-group"></i> Employés</a>
     <a href="livraisons.php?discord=<?= $_GET["discord"] ?>" class="nav-link"><i class="mdi mdi-truck-delivery"></i> Livraisons</a>
     <a href="factures.php?discord=<?= $_GET["discord"] ?>" class="nav-link"><i class="mdi mdi-file-document"></i> Factures</a>
+    <a href="vehicules.php?discord=<?= $_GET["discord"] ?>" class="nav-link"><i class="mdi mdi-car"></i> Vehicules</a>
     <a href="declaration.php?discord=<?= $_GET["discord"] ?>" class="nav-link"><i class="mdi mdi-clipboard-text"></i> Déclarations</a>
 </nav>

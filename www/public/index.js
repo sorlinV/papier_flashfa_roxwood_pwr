@@ -39,7 +39,7 @@ class DeclarationForm extends HTMLElement {
             <select class="form-select" id="type" name="type" required>
             </select>
         `)[0];
-        if(session.grade > Utils.GRADE.manager) {
+        if(session.grade >= Utils.GRADE.manager) {
             let options = Utils.htmlToArrayElement(`
                 <option value="bouteille_essence">Bouteille Essence</option>
                 <option value="bidon_sythese">Bidon Synthèse</option>
@@ -975,6 +975,7 @@ class FactureUpdate extends HTMLElement {
       alert('Erreur lors du chargement de la facture');
       return;
     }
+    console.log(this.factureData)
 
     if (this.modalEl) {
       this.modalInstance.show();
@@ -991,6 +992,9 @@ class FactureUpdate extends HTMLElement {
       submit: `fu_submit_${suffix}`
     };
 
+    console.log(this.factureData, this.factureData[0]);
+    this.factureData = this.factureData[0];
+    console.log(this.factureData);
     const modalHtml = `
       <div class="modal fade" id="${this.modalId}" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
@@ -1005,12 +1009,12 @@ class FactureUpdate extends HTMLElement {
               <form id="fu_form_${suffix}">
                 <div class="mb-3">
                   <label for="${ids.montant}" class="form-label">Montant (€) <i class="mdi mdi-currency-eur"></i></label>
-                  <input type="number" class="form-control" id="${ids.montant}" name="montant" step="0.01" required />
+                  <input type="number" class="form-control" id="${ids.montant}" value="${this.factureData.montant}" name="montant" step="0.01" required />
                 </div>
 
                 <div class="mb-3">
                   <label for="${ids.statut}" class="form-label">Statut <i class="mdi mdi-check-circle"></i></label>
-                  <select class="form-select" id="${ids.statut}" name="statut" required>
+                  <select class="form-select" id="${ids.statut}" value="${this.factureData.statut}" name="statut" required>
                     <option value="en_attente">En attente</option>
                     <option value="payee">Payée</option>
                     <option value="annulee">Annulée</option>
@@ -1019,7 +1023,7 @@ class FactureUpdate extends HTMLElement {
 
                 <div class="mb-3">
                   <label for="${ids.label}" class="form-label">Label <i class="mdi mdi-label"></i></label>
-                  <input type="text" class="form-control" id="${ids.label}" name="label" placeholder="Description optionnelle" />
+                  <input type="text" class="form-control" id="${ids.label}" value="${this.factureData.label}" name="label" placeholder="Description optionnelle" />
                 </div>
 
                 <div class="d-grid">

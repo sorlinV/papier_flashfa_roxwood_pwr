@@ -61,3 +61,12 @@ CREATE TABLE factures (
     label TEXT,
     date_facture TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE vehicules (
+    id INTEGER PRIMARY KEY AUTO_INCREMENT,
+    matricule TEXT NOT NULL,
+    nom TEXT NOT NULL,
+    is_taken BOOLEAN DEFAULT 0,
+    user_id INTEGER NOT NULL,
+    date_achat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
