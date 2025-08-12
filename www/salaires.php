@@ -1,4 +1,3 @@
-<?php include("includes/verif_user.php") ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>

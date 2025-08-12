@@ -1,4 +1,3 @@
-<?php include("includes/verif_user.php") ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -21,11 +20,8 @@
     <?php include("includes/header.php") ?>
 
     <!-- Page Content -->
-    <main style="background-color: #f8f9fa;">
-
-
-
-
+    <main class="d-flex flex-column justify-content-center align-items-center" style="background-color: #f8f9fa;">
+      <declaration-form class="w-50"></declaration-form>
     </main>
 
   </main>
@@ -33,6 +29,6 @@
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="./public/index.js" type="module"></script>
+  <script src="./public/index.js" type="module"></script>
 </body>
 </html>

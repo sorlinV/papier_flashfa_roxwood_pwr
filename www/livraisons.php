@@ -1,4 +1,3 @@
-<?php include("includes/verif_user.php") ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -22,9 +21,10 @@
 
     <!-- Page Content -->
     <main style="background-color: #f8f9fa;">
-      <pre>
-        <?php print_r($user); ?>
-      </pre>
+      <div class="container">
+        <h2 class="mb-4"><i class="mdi mdi-account-group"></i> Liste des livraisons</h2>
+        <delivery-week-table class="table-responsive"></delivery-week-table>
+      </div>
     </main>
 
   </main>

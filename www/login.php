@@ -3,8 +3,7 @@
 <script>
 localStorage.removeItem('auth_code');
 </script>
-<?php } ?>
-<!DOCTYPE html>
+<?php } ?><!DOCTYPE html>
 <html lang="fr">
 <head>
     <?php include("includes/head.php") ?>
@@ -41,7 +40,7 @@ localStorage.removeItem('auth_code');
 <script>
 // Si auth déjà présent, redirige vers os.php
 if (localStorage.getItem('auth_code')) {
-    window.location.href = 'index.php?user=' + localStorage.getItem('auth_code');
+    window.location.href = 'index.php?discord=' + localStorage.getItem('auth_code');
 }
 
 // Gestion du formulaire
@@ -50,11 +49,10 @@ document.getElementById('loginForm').addEventListener('submit', function (e) {
 
     const user = document.getElementById('username').value;
     const pass = document.getElementById('password').value;
-    const authCode = md5(user + pass);
-    localStorage.setItem('auth_code', authCode);
+    localStorage.setItem('auth_code', "162613553516249088");
 
     // Redirige vers os.php
-    window.location.href = 'index.php?user=' + authCode;
+    window.location.href = 'index.php?discord=' + authCode;
 });
 </script>
 </body>

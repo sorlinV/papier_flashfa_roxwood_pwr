@@ -1,9 +1,7 @@
-# apache PHP + mariadb php:8.2-apache
 version: '3'
 services:
   roxwood_pwr:
-    image: php:8.2-apache
-    # $mysqli = new mysqli(env("DB_HOST"), env("DB_USER"), env("DB_PASS"), env("DB_NAME"));
+    build: .
     environment:
       HOST: "flashfa_roxwood_pwr.digitarucamera.eu"
       DB_HOST: roxwood_pwr_db
@@ -17,16 +15,16 @@ services:
     restart: always
     labels:
       - traefik.enable=true
-      - traefik.http.services.portfolio.loadbalancer.server.port=80
-      - traefik.http.routers.portfolio-http.entrypoints=http
-      - traefik.http.routers.portfolio-http.rule=Host(`portfolio.sorlinv.fr`)
+      - traefik.http.services.flashfaroxwood.loadbalancer.server.port=80
+      - traefik.http.routers.flashfaroxwood-http.entrypoints=http
+      - traefik.http.routers.flashfaroxwood-http.rule=Host(`flashfaroxwood.digitarucamera.eu`)
       - traefik.http.middlewares.https-redirect.redirectscheme.scheme=https
       - traefik.http.middlewares.https-redirect.redirectscheme.permanent=true
-      - traefik.http.routers.portfolio-http.middlewares=https-redirect@docker
-      - traefik.http.routers.portfolio-https.entrypoints=https
-      - traefik.http.routers.portfolio-https.rule=Host(`portfolio.sorlinv.fr`)
-      - traefik.http.routers.portfolio-https.tls=true
-      - traefik.http.routers.portfolio-https.tls.certresolver=letsencrypt
+      - traefik.http.routers.flashfaroxwood-http.middlewares=https-redirect@docker
+      - traefik.http.routers.flashfaroxwood-https.entrypoints=https
+      - traefik.http.routers.flashfaroxwood-https.rule=Host(`flashfaroxwood.digitarucamera.eu`)
+      - traefik.http.routers.flashfaroxwood-https.tls=true
+      - traefik.http.routers.flashfaroxwood-https.tls.certresolver=letsencrypt
     networks:
       - traefik
 
@@ -38,8 +36,33 @@ services:
       MYSQL_DATABASE: db
       MYSQL_USER: user
       MYSQL_PASSWORD: password
+    networks:
+      - traefik
+
+  flashfaroxwoodpma:
+    image: phpmyadmin:latest
+    restart: always
+    environment:
+      PMA_HOST: roxwood_pwr_db
+      PMA_USER: root
+      PMA_PASSWORD: root
+    ports:
+      - "8080:80"
+    networks:
+      - traefik
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.flashfaroxwoodpma-http.entrypoints=http
+      - traefik.http.routers.flashfaroxwoodpma-http.rule=Host(`flashfaroxwoodpma.digitarucamera.eu`)
+      - traefik.http.middlewares.https-redirect.redirectscheme.scheme=https
+      - traefik.http.middlewares.https-redirect.redirectscheme.permanent=true
+      - traefik.http.routers.flashfaroxwoodpma-http.middlewares=https-redirect@docker
+      - traefik.http.routers.flashfaroxwoodpma-https.entrypoints=https
+      - traefik.http.routers.flashfaroxwoodpma-https.rule=Host(`flashfaroxwoodpma.digitarucamera.eu`)
+      - traefik.http.routers.flashfaroxwoodpma-https.tls=true
+      - traefik.http.routers.flashfaroxwoodpma-https.tls.certresolver=letsencrypt
 
 networks:
   traefik:
-    external:
-      name: web_traefik
+    # external:
+    #   name: web_traefik

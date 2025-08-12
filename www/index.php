@@ -1,4 +1,3 @@
-<?php include("includes/verif_user.php") ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -23,7 +22,6 @@
     <!-- Page Content -->
     <main style="background-color: #f8f9fa;">
       <pre>
-        <?php print_r($user); ?>
       </pre>
     </main>
 

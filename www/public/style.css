@@ -1,38 +1,38 @@
 
-    body {
-      display: flex;
-      min-height: 100vh;
-      background-color: #f8f9fa;
-    }
-    aside {
-      width: 250px;
-      background-color: #212529;
-      color: white;
-      flex-shrink: 0;
-    }
-    aside .nav-link {
-      color: #adb5bd;
-      transition: background-color 0.2s;
-    }
-    aside .nav-link:hover {
-      background-color: #343a40;
-      color: white;
-    }
-    header {
-      background-color: white;
-      border-bottom: 1px solid #dee2e6;
-    }
-    main {
-      flex-grow: 1;
-    }
+body {
+  display: none;
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+aside {
+  width: 250px;
+  background-color: #212529;
+  color: white;
+  flex-shrink: 0;
+}
+aside .nav-link {
+  color: #adb5bd;
+  transition: background-color 0.2s;
+}
+aside .nav-link:hover {
+  background-color: #343a40;
+  color: white;
+}
+header {
+  background-color: white;
+  border-bottom: 1px solid #dee2e6;
+}
+main {
+  flex-grow: 1;
+}
 
-    table {
-      table-layout: fixed;
-    }
-    th, td {
-      text-wrap: nowrap !important;
-      white-space: nowrap !important;
-      overflow: hidden !important;
-      text-overflow: ellipsis !important;
-      background-color: aqua;
-    }
+table {
+  table-layout: fixed;
+}
+th, td {
+  text-wrap: nowrap !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  background-color: aqua;
+}

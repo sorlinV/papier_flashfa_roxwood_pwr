@@ -1,4 +1,3 @@
-<?php include("includes/verif_user.php") ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -26,48 +25,7 @@
 
     <div class="container">
       <h2 class="mb-4"><i class="mdi mdi-account-group"></i> Liste des Employés</h2>
-      <div class="table-responsive">
-        <table class="table table-dark table-hover table-bordered align-middle" style="font-size: 0.7em;">
-          <thead class="table-primary text-dark">
-            <tr>
-              <th>Date d'arrivée</th>
-              <th>Matricules</th>
-              <th>Nom - ID</th>
-              <th>Tel</th>
-              <th>IBAN</th>
-              <th>Grade</th>
-              <th>Avertissement</th>
-              <th>Bouteille d'essence</th>
-              <th>Bidon pétrole de synt</th>
-              <th>Bidon d'essence</th>
-              <th>Livraison</th>
-              <th>quota actuel</th>
-              <th>Salaire brut (max par grade)</th>
-              <th>Frais essence</th>
-              <th>Salaire total</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>2023-01-01</td>
-              <td>12345678</td>
-              <td>John Doe</td>
-              <td>1234567890</td>
-              <td>251455</td>
-              <td>Novice</td>
-              <td>0</td>
-              <td>0</td>
-              <td>0</td>
-              <td>0</td>
-              <td>0</td>
-              <td>500</td>
-              <td>0</td>
-              <td>500</td>
-              <td>500</td>
-            </tr>            <!-- D'autres lignes ici -->
-          </tbody>
-        </table>
-      </div>
+      <users-week-table class="table-responsive"></users-week-table>
     </div>
 
     </main>
