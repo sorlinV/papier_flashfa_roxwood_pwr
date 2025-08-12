@@ -21,7 +21,8 @@
 
     <!-- Page Content -->
     <main class="d-flex flex-column justify-content-center align-items-center" style="background-color: #f8f9fa;">
-      <declaration-form class="w-50"></declaration-form>
+      <declaration-form class="w-50 mb-5"></declaration-form>
+      <declaration-table></declaration-table>
     </main>
 
   </main>

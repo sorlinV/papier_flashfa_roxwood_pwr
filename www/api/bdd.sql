@@ -56,19 +56,7 @@ CREATE TABLE declarations (
 
 CREATE TABLE factures (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
-    ltd_nom TEXT NOT NULL,
     montant INTEGER NOT NULL,
-    semaine TEXT NOT NULL,
-    statut TEXT NOT NULL,
-    label TEXT,
-    date_facture TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE achat (
-    id INTEGER PRIMARY KEY AUTO_INCREMENT,
-    label TEXT NOT NULL,
-    montant INTEGER NOT NULL,
-    semaine TEXT NOT NULL,
     statut TEXT NOT NULL,
     label TEXT,
     date_facture TIMESTAMP DEFAULT CURRENT_TIMESTAMP

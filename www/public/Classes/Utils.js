@@ -42,6 +42,14 @@ export class API {
         return API.get_sql(`SELECT * FROM users WHERE discord_id = '${discord_id}'`);
     }
 
+    static get_declarations() {
+        return API.get_sql(`SELECT * FROM declarations ORDER BY date_declaration DESC;`);
+    }
+
+    static delete_declaration(id) {
+        return API.get_sql(`DELETE FROM declarations WHERE id = ${id};`);
+    }
+
     static add_user(discord_id, matricule, tel, IBAN, name, grade) {
         let sql = `INSERT INTO users (discord_id, matricule, tel, IBAN, name, grade, date_entree, avertissements) VALUES ('${discord_id}', '${matricule}', '${tel}', '${IBAN}', '${name}', '${grade}', CURRENT_TIMESTAMP, 0);`;
         return API.get_sql(sql);
@@ -117,6 +125,34 @@ ORDER BY u.grade ASC, u.date_entree ASC;`;
             ORDER BY d.lieu ASC;
         `;
         return API.get_sql(sql);
+    }
+    static get_factures() {
+        return API.get_sql(`SELECT * FROM factures ORDER BY date_facture DESC;`);
+    }
+
+    static get_facture_by_id(id) {
+        return API.get_sql(`SELECT * FROM factures WHERE id = ${id};`);
+    }
+
+    static add_facture(montant, statut, label) {
+        const labelValue = label ? `'${label}'` : 'NULL';
+        let sql = `INSERT INTO factures (montant, statut, label, date_facture) VALUES (${montant}, '${statut}', ${labelValue}, CURRENT_TIMESTAMP);`;
+        return API.get_sql(sql);
+    }
+
+    static update_facture(id, data) {
+        const labelValue = data.label ? `'${data.label}'` : 'NULL';
+        return API.get_sql(`
+            UPDATE factures
+            SET montant = ${data.montant},
+                statut = '${data.statut}',
+                label = ${labelValue}
+            WHERE id = ${id};
+        `);
+    }
+
+    static delete_facture(id) {
+        return API.get_sql(`DELETE FROM factures WHERE id = ${id};`);
     }
 
 

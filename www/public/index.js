@@ -27,12 +27,13 @@ class DeclarationForm extends HTMLElement {
         super();
     }
     connectedCallback() {
-        if(session == null) {
+        if (typeof session === 'undefined' || session == null) {
             document.addEventListener("session_loaded", () => {
                 this.connectedCallback();
-            });
+            }, { once: true });
             return;
         }
+
 
         let select = Utils.htmlToArrayElement(`
             <select class="form-select" id="type" name="type" required>
@@ -147,6 +148,12 @@ class UsersWeekTable extends HTMLElement {
   }
 
   connectedCallback() {
+    if (typeof session === 'undefined' || session == null) {
+        document.addEventListener("session_loaded", () => {
+            this.connectedCallback();
+        }, { once: true });
+        return;
+    }
     this.renderLoading();
     this.loadData()
       .then(data => {
@@ -185,81 +192,84 @@ class UsersWeekTable extends HTMLElement {
       13: "Directeur"
     };
 
-    function salaireBrutMax(gradeId) {
+    function salaireMaxGet(gradeId) {
       const salaireMap = {
-        1: 1000,
-        2: 1200,
-        3: 1400,
-        4: 1500,
-        5: 1700,
-        6: 1900,
-        7: 1300,
-        8: 1500,
-        9: 1700,
-        10: 2500,
-        11: 3000,
-        12: 3500,
-        13: 4000
+        1: 15000,
+        2: 15000,
+        3: 15000,
+        4: 15000,
+        5: 15000,
+        6: 15000,
+        7: 15000,
+        8: 15000,
+        9: 15000,
+        10: 15000,
+        11: 15000,
+        12: 15000,
+        13: 15000
       };
       return salaireMap[gradeId] || 0;
     }
 
-    function salaireTotal(salaireBrut, fraisEssence) {
-      return salaireBrut + (parseFloat(fraisEssence) || 0);
+    function salaireTotal(salaireMax, fraisEssence) {
+      return salaireMax + (parseFloat(fraisEssence) || 0);
     }
-
 
     const rows = data.map(user => {
       const gradeId = user.grade;
-      const salaireBrut = salaireBrutMax(gradeId);
+      const salaireMax = salaireMaxGet(gradeId);
       const fraisEssence = user.frais_essence || 0;
-      const salaireTot = salaireTotal(salaireBrut, fraisEssence);
-        console.log(user);
+      const quota = (user.bouteille_essence * (salaireMax / 7000)) + (user.bidon_essence * (salaireMax / 4000)) + (user.bidon_petrole_synt * (salaireMax / 3200)) + (user.livraison * (salaireMax / 3200));
+      const quota_clamp = Math.min(quota, salaireMax);
+      const restant = quota - quota_clamp;
+      const salaireTot = salaireTotal(quota_clamp, fraisEssence);
       return `
         <tr>
-          <td>${new Date(user.date_entree).toISOString().slice(0, 10)} <i class="mdi mdi-calendar"></i></td>
-          <td>${user.matricule || ""}</td>
+          <td class="${this.getAttribute("is_salaire") == "true" ? "d-none" : ""}" >${new Date(user.date_entree).toISOString().slice(0, 10)} <i class="mdi mdi-calendar"></i></td>
+          <td class="${this.getAttribute("is_salaire") == "true" ? "d-none" : ""}" >${user.matricule || ""}</td>
           <td>${user.name || ""} <i class="mdi mdi-account"></i></td>
-          <td>${user.tel || ""} <i class="mdi mdi-phone"></i></td>  
-          <td>${user.IBAN || ""} <i class="mdi mdi-bank"></i></td>  
-          <td>${gradeMap[gradeId] || gradeId} <i class="mdi mdi-account-badge"></i></td>
-          <td>${user.avertissements || 0} <i class="mdi mdi-alert-circle-outline"></i></td>
-          <td>${user.bouteille_essence || 0} <i class="mdi mdi-gas-station"></i></td>
-          <td>${user.bidon_petrole_synt || 0} <i class="mdi mdi-oil"></i></td>
-          <td>${user.bidon_essence || 0} <i class="mdi mdi-fuel"></i></td>
-          <td>${user.livraison || 0} <i class="mdi mdi-truck-delivery"></i></td>
-          <td>${user.quota_actuel || 0} <i class="mdi mdi-chart-bar"></i></td>
-          <td>${salaireBrut}<i class="mdi mdi-currency-eur"></i></td>
-          <td>${fraisEssence} € <i class="mdi mdi-gas-station"></i></td>
-          <td>${salaireTot.toFixed(2)}<i class="mdi mdi-currency-eur"></i></td>
-          <td><user-form discord_id="${user.discord_id}"></user-form></td>
-          <td><user-delete discord_id="${user.discord_id}"></user-delete></td>
+          <td class="${this.getAttribute("is_salaire") == "true" ? "d-none" : ""}" >${user.tel || ""} <i class="mdi mdi-phone"></i></td>  
+          <td >${user.IBAN || ""} <i class="mdi mdi-bank"></i></td>  
+          <td class="${this.getAttribute("is_salaire") == "true" ? "d-none" : ""}" >${gradeMap[gradeId] || gradeId} <i class="mdi mdi-account-badge"></i></td>
+          <td class="${this.getAttribute("is_salaire") == "true" ? "d-none" : ""}" >${user.avertissements || 0} <i class="mdi mdi-alert-circle-outline"></i></td>
+          <td class="${this.getAttribute("is_salaire") != "true" ? "d-none" : ""}" >${user.bouteille_essence || 0} <i class="mdi mdi-gas-station"></i></td>
+          <td class="${this.getAttribute("is_salaire") != "true" ? "d-none" : ""}" >${user.bidon_petrole_synt || 0} <i class="mdi mdi-oil"></i></td>
+          <td class="${this.getAttribute("is_salaire") != "true" ? "d-none" : ""}" >${user.bidon_essence || 0} <i class="mdi mdi-fuel"></i></td>
+          <td class="${this.getAttribute("is_salaire") != "true" ? "d-none" : ""}" >${user.livraison || 0} <i class="mdi mdi-truck-delivery"></i></td>
+          <td class="${this.getAttribute("is_salaire") != "true" ? "d-none" : ""}" >${quota.toFixed(2)} <i class="mdi mdi-chart-bar"></i></td>
+          <td class="${this.getAttribute("is_salaire") != "true" ? "d-none" : ""}" >${salaireMax}<i class="mdi mdi-currency-eur"></i></td>
+          <td class="${this.getAttribute("is_salaire") != "true" ? "d-none" : ""}" >${restant.toFixed(2)}<i class="mdi mdi-currency-eur"></i></td>
+          <td class="${this.getAttribute("is_salaire") != "true" ? "d-none" : ""}" >${fraisEssence} € <i class="mdi mdi-gas-station"></i></td>
+          <td class="${this.getAttribute("is_salaire") != "true" ? "d-none" : ""}" >${salaireTot.toFixed(2)}<i class="mdi mdi-currency-eur"></i></td>
+          <td class="${this.getAttribute("is_salaire") == "true" || session.grade < 10 ? "d-none" : ""}" ><user-form discord_id="${user.discord_id}"></user-form></td>
+          <td class="${this.getAttribute("is_salaire") == "true" || session.grade < 10 ? "d-none" : ""}" ><user-delete discord_id="${user.discord_id}"></user-delete></td>
         </tr>
       `;
     }).join("");
 
     this.innerHTML = `
       <div class="table-responsive">
-        <table class="table table-striped table-hover table-bordered align-middle" style="font-size: 0.5rem">
+        <table class="table table-striped table-hover table-bordered align-middle" style="font-size: 0.8rem">
           <thead class="table-primary text-dark">
             <tr>
-              <th title="Date d'arrivée">Date d'arrivée <i class="mdi mdi-calendar"></i></th>
-              <th title="Matricules">Matricules</th>
-              <th title="Nom">Nom<i class="mdi mdi-account"></i></th>
-              <th title="Tel">Tel <i class="mdi mdi-phone"></i></th>
+              <th class="${this.getAttribute("is_salaire") == "true" ? "d-none" : ""}" title="Date d'arrivée">Date d'arrivée <i class="mdi mdi-calendar"></i></th>
+              <th class="${this.getAttribute("is_salaire") == "true" ? "d-none" : ""}" title="Matricules">Matricules</th>
+              <th  title="Nom">Nom<i class="mdi mdi-account"></i></th>
+              <th class="${this.getAttribute("is_salaire") == "true" ? "d-none" : ""}" title="Tel">Tel <i class="mdi mdi-phone"></i></th>
               <th title="IBAN">IBAN <i class="mdi mdi-bank"></i></th>
-              <th title="Grade">Grade <i class="mdi mdi-account-badge"></i></th>
-              <th title="Avertissements">Avertissement <i class="mdi mdi-alert-circle-outline"></i></th>
-              <th title="Bouteille d'essence">Bouteille d'essence <i class="mdi mdi-gas-station"></i></th>
-              <th title="Bidon pétrole de synt">Bidon pétrole de synt <i class="mdi mdi-oil"></i></th>
-              <th title="Bidon d'essence">Bidon d'essence <i class="mdi mdi-fuel"></i></th>
-              <th>Livraison <i class="mdi mdi-truck-delivery"></i></th>
-              <th>Quota actuel <i class="mdi mdi-chart-bar"></i></th>
-              <th>Salaire brut (max par grade) <i class="mdi mdi-currency-eur"></i></th>
-              <th>Frais essence <i class="mdi mdi-gas-station"></i></th>
-              <th>Salaire total <i class="mdi mdi-cash-multiple"></i></th>
-              <th><i class="mdi mdi-account-edit"></i></th>
-              <th><i class="mdi mdi-account-delete"></i></th>
+              <th class="${this.getAttribute("is_salaire") == "true" ? "d-none" : ""}" title="Grade">Grade <i class="mdi mdi-account-badge"></i></th>
+              <th class="${this.getAttribute("is_salaire") == "true" ? "d-none" : ""}" title="Avertissements">Avertissement <i class="mdi mdi-alert-circle-outline"></i></th>
+              <th class="${this.getAttribute("is_salaire") != "true" ? "d-none" : ""}" title="Bouteille d'essence">Bouteille d'essence <i class="mdi mdi-gas-station"></i></th>
+              <th class="${this.getAttribute("is_salaire") != "true" ? "d-none" : ""}" title="Bidon pétrole de synt">Bidon pétrole de synt <i class="mdi mdi-oil"></i></th>
+              <th class="${this.getAttribute("is_salaire") != "true" ? "d-none" : ""}" title="Bidon d'essence">Bidon d'essence <i class="mdi mdi-fuel"></i></th>
+              <th class="${this.getAttribute("is_salaire") != "true" ? "d-none" : ""}" title="Livraison">Livraison <i class="mdi mdi-truck-delivery"></i></th>
+              <th class="${this.getAttribute("is_salaire") != "true" ? "d-none" : ""}" title="Quota">Quota actuel <i class="mdi mdi-chart-bar"></i></th>
+              <th class="${this.getAttribute("is_salaire") != "true" ? "d-none" : ""}" title="Salaire Max">Salaire Max <i class="mdi mdi-currency-eur"></i></th>
+              <th class="${this.getAttribute("is_salaire") != "true" ? "d-none" : ""}" title="Salaire Restant">Salaire restant <i class="mdi mdi-currency-eur"></i></th>
+              <th class="${this.getAttribute("is_salaire") != "true" ? "d-none" : ""}" title="Frais essence">Frais essence <i class="mdi mdi-gas-station"></i></th>
+              <th class="${this.getAttribute("is_salaire") != "true" ? "d-none" : ""}" title="Salaire total">Salaire total <i class="mdi mdi-cash-multiple"></i></th>
+              <th class="${this.getAttribute("is_salaire") == "true" || session.grade < 10 ? "d-none" : ""}" title="Modifier Utilisateur"><i class="mdi mdi-account-edit"></i></th>
+              <th class="${this.getAttribute("is_salaire") == "true" || session.grade < 10 ? "d-none" : ""}" title="Supprimer Utilisateur"><i class="mdi mdi-account-delete"></i></th>
             </tr>
           </thead>
           <tbody>
@@ -277,6 +287,12 @@ class DeliveryWeekTable extends HTMLElement {
   }
 
   connectedCallback() {
+    if (typeof session === 'undefined' || session == null) {
+        document.addEventListener("session_loaded", () => {
+            this.connectedCallback();
+        }, { once: true });
+        return;
+    }
     const dateStr = this.getAttribute('date') || new Date().toISOString();
     const date = new Date(dateStr);
 
@@ -296,19 +312,22 @@ class DeliveryWeekTable extends HTMLElement {
   renderTable(data) {
     const allLtds = Object.keys(Utils.LTD);
     const deliveriesByLtd = {};
-    data.forEach(row => {
-      deliveriesByLtd[row.ltd] = row.total_livraisons || 0;
-    });
 
     const rows = allLtds.map(ltdName => {
+      let qtyTotal = 0;
+      data.forEach(row => {
+        console.log(Utils.LTD[ltdName], parseInt(row.ltd), parseInt(row.total_livraisons));
+        if(Utils.LTD[ltdName] == parseInt(row.ltd)) {
+            qtyTotal += parseInt(row.total_livraisons);
+        }
+      });
       const qty = deliveriesByLtd[ltdName] || 0;
-      const priceTotal = (qty * this.unitPrice).toFixed(2);
       return `
         <tr>
           <td>${ltdName}</td>
-          <td class="text-center">${qty}</td>
+          <td class="text-center">${qtyTotal}</td>
           <td class="text-center">${this.unitPrice.toFixed(2)} €</td>
-          <td class="text-center">${priceTotal} €</td>
+          <td class="text-center">${(this.unitPrice * qtyTotal).toFixed(2)} €</td>
         </tr>
       `;
     }).join('');
@@ -344,10 +363,10 @@ class UserForm extends HTMLElement {
   }
 
   connectedCallback() {
-    if(session == null) {
+    if (typeof session === 'undefined' || session == null) {
         document.addEventListener("session_loaded", () => {
             this.connectedCallback();
-        });
+        }, { once: true });
         return;
     }
     if(session.grade < Utils.GRADE.manager) {
@@ -591,10 +610,10 @@ class UserDelete extends HTMLElement {
   }
 
   connectedCallback() {
-    if(session == null) {
+    if (typeof session === 'undefined' || session == null) {
         document.addEventListener("session_loaded", () => {
             this.connectedCallback();
-        });
+        }, { once: true });
         return;
     }
     if(session.grade < Utils.GRADE.manager) {
@@ -627,6 +646,668 @@ class UserDelete extends HTMLElement {
   }
 }
 
+
+class DeclarationTable extends HTMLElement {
+  constructor() {
+    super();
+  }
+
+  connectedCallback() {
+    if (typeof session === 'undefined' || session == null) {
+        document.addEventListener("session_loaded", () => {
+            this.connectedCallback();
+        }, { once: true });
+        return;
+    }
+    const dateStart = this.getAttribute('start') || null;
+    const dateEnd = this.getAttribute('end') || null;
+
+    this.renderLoading();
+
+    Utils.API.get_declarations({ start: dateStart, end: dateEnd })
+      .then(data => {
+        this.renderTable(data);
+      })
+      .catch(err => {
+        this.innerHTML = `<p class="text-danger">Erreur lors du chargement : ${err}</p>`;
+      });
+  }
+
+  renderLoading() {
+    this.innerHTML = `<p class="text-muted">Chargement des déclarations...</p>`;
+  }
+
+  renderTable(data) {
+    if (!data || data.length === 0) {
+      this.innerHTML = `<p class="text-warning">Aucune déclaration trouvée pour cette période.</p>`;
+      return;
+    }
+
+    const rows = data.map(row => {
+      return `
+        <tr>
+          <td>${row.type}</td>
+          <td class="text-center">${row.quantite}</td>
+          <td>${row.lieu || ''}</td>
+          <td>${row.image ? `<img src="${row.image}" alt="preuve" style="max-height:40px;">` : ''}</td>
+          <td>${new Date(row.date_declaration).toLocaleString()}</td>
+          <td class="${session.grade < 11 ? "d-none" : ""}"><delete-declaration declaration_id="${row.id}"><i class="mdi mdi-delete"></i></delete-declaration></td>
+        </tr>
+      `;
+    }).join('');
+
+    this.innerHTML = `
+      <div class="table-responsive">
+        <table class="table table-hover table-bordered align-middle">
+          <thead class="table-primary">
+            <tr>
+              <th>Type <i class="mdi mdi-format-list-bulleted"></i></th>
+              <th>Quantité <i class="mdi mdi-counter"></i></th>
+              <th>Lieu <i class="mdi mdi-map-marker"></i></th>
+              <th>Image <i class="mdi mdi-camera"></i></th>
+              <th>Date Déclaration <i class="mdi mdi-calendar"></i></th>
+              <th class="${session.grade < 11 ? "d-none" : ""}"><i class="mdi mdi-delete"></i></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+}
+class DeleteDeclaration extends HTMLElement {
+  constructor() {
+    super();
+  }
+
+  connectedCallback() {
+    // On attend la session si pas encore chargée
+    if (typeof session === 'undefined' || session == null) {
+      document.addEventListener("session_loaded", () => {
+        this.connectedCallback();
+      }, { once: true });
+      return;
+    }
+
+    // Vérification des droits (manager minimum)
+    if (session.grade < Utils.GRADE.manager) {
+      this.innerHTML = '';
+      return;
+    }
+
+    const declarationId = this.getAttribute('declaration_id');
+    const btnClass = this.getAttribute('class') || 'btn btn-danger btn-sm';
+    const label = this.getAttribute('label') || '';
+    const confirmMsg = this.getAttribute('confirm') || 'Êtes-vous sûr de vouloir supprimer cette déclaration ?';
+
+    this.innerHTML = `
+      <button type="button" class="${btnClass}">
+        <i class="mdi mdi-delete"></i> ${label}
+      </button>
+    `;
+
+    this.querySelector('button').addEventListener('click', async () => {
+      if (!declarationId) {
+        console.error('Aucun id fourni à <delete-declaration>.');
+        return;
+      }
+
+      if (!confirm(confirmMsg)) return;
+
+      try {
+        // Appelle la méthode API adaptée pour supprimer la déclaration par id
+        await Utils.API.delete_declaration(declarationId);
+        window.location.reload(true);
+      } catch (error) {
+        console.error('Erreur lors de la suppression de la déclaration :', error);
+        alert('La suppression a échoué. Veuillez réessayer.');
+      }
+    });
+  }
+}
+// Tableau des factures
+class FactureTable extends HTMLElement {
+  constructor() {
+    super();
+  }
+
+  connectedCallback() {
+    if (typeof session === 'undefined' || session == null) {
+        document.addEventListener("session_loaded", () => {
+            this.connectedCallback();
+        }, { once: true });
+        return;
+    }
+    this.renderLoading();
+    this.loadData()
+      .then(data => {
+        this.renderTable(data);
+      })
+      .catch(error => {
+        this.innerHTML = `<p class="text-danger">Erreur lors du chargement des factures : ${error.message}</p>`;
+      });
+  }
+
+  renderLoading() {
+    this.innerHTML = `<p class="text-muted">Chargement des factures...</p>`;
+  }
+
+  loadData() {
+    // Vous devrez adapter ceci selon votre API
+    return Utils.API.get_factures();
+  }
+
+  renderTable(data) {
+    if (!data || data.length === 0) {
+      this.innerHTML = `<p class="text-warning">Aucune facture trouvée.</p>`;
+      return;
+    }
+
+    const statusBadge = (statut) => {
+      const badges = {
+        'payee': 'badge bg-success',
+        'en_attente': 'badge bg-warning text-dark',
+        'annulee': 'badge bg-danger'
+      };
+      return badges[statut] || 'badge bg-secondary';
+    };
+
+    let total = 0;
+
+    const rows = data.map(facture => {
+    facture.montant = parseFloat(facture.montant);
+    total += facture.montant;
+      return `
+        <tr>
+          <td>${facture.id}</td>
+          <td class="text-end ${facture.montant > 0 ? "text-success" : "text-danger"}">${facture.montant.toFixed(2)}<i class="mdi mdi-currency-eur"></i></td>
+          <td class="text-center">
+            <span class="${statusBadge(facture.statut)}">
+              ${facture.statut.replace('_', ' ')}
+            </span>
+          </td>
+          <td>${facture.label || ''} <i class="mdi mdi-label"></i></td>
+          <td class="text-center">${new Date(facture.date_facture).toLocaleDateString()} <i class="mdi mdi-calendar"></i></td>
+          <td class="${session.grade < Utils.GRADE.manager ? "d-none" : ""}">
+            <facture-update facture_id="${facture.id}"></facture-update>
+          </td>
+          <td class="${session.grade < Utils.GRADE.manager ? "d-none" : ""}">
+            <facture-delete facture_id="${facture.id}"></facture-delete>
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    this.innerHTML = `
+      <div class="table-responsive">
+        <table class="table table-striped table-hover table-bordered align-middle">
+          <thead class="table-primary text-dark">
+            <tr>
+              <th>ID <i class="mdi mdi-identifier"></i></th>
+              <th>Montant <i class="mdi mdi-currency-eur"></i></th>
+              <th>Statut <i class="mdi mdi-check-circle"></i></th>
+              <th>Label <i class="mdi mdi-label"></i></th>
+              <th>Date <i class="mdi mdi-calendar"></i></th>
+              <th class="${session.grade < Utils.GRADE.manager ? "d-none" : ""}">
+                <i class="mdi mdi-pencil"></i>
+              </th>
+              <th class="${session.grade < Utils.GRADE.manager ? "d-none" : ""}">
+                <i class="mdi mdi-delete"></i>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+          <tfoot>
+            <tr>
+              <th colspan="2" class="text-end">Total : ${total.toFixed(2)}<i class="mdi mdi-currency-eur"></i></th>
+            </tr>
+        </table>
+      </div>
+    `;
+  }
+}
+
+// Suppression de factures
+class FactureDelete extends HTMLElement {
+  constructor() {
+    super();
+  }
+
+  connectedCallback() {
+    if (typeof session === 'undefined' || session == null) {
+        document.addEventListener("session_loaded", () => {
+            this.connectedCallback();
+        }, { once: true });
+        return;
+    }
+    
+    if(session.grade < Utils.GRADE.manager) {
+        this.innerHTML = '';
+        return;
+    }
+
+    const factureId = this.getAttribute('facture_id');
+    const btnClass = this.getAttribute('class') || 'btn btn-danger btn-sm';
+    const label = this.getAttribute('label') || '';
+
+    this.innerHTML = `
+      <button type="button" class="${btnClass}" title="Supprimer la facture">
+        <i class="mdi mdi-delete"></i> ${label}
+      </button>
+    `;
+
+    this.querySelector('button').addEventListener('click', async () => {
+        if (!factureId) {
+            console.error('Aucun facture_id fourni à <facture-delete>.');
+            return;
+        }
+
+        const confirmMsg = this.getAttribute('confirm') || 'Êtes-vous sûr de vouloir supprimer cette facture ?';
+        if (!confirm(confirmMsg)) return;
+
+        try {
+            await Utils.API.delete_facture(factureId);
+            window.location.reload(true);
+        } catch (error) {
+            console.error('Erreur lors de la suppression:', error);
+            alert('Erreur lors de la suppression de la facture.');
+        }
+    });
+  }
+}
+
+// Modification de factures
+class FactureUpdate extends HTMLElement {
+  constructor() {
+    super();
+    this.modalId = null;
+    this.modalEl = null;
+    this.modalInstance = null;
+    this.factureData = null;
+  }
+
+  connectedCallback() {
+    if (typeof session === 'undefined' || session == null) {
+        document.addEventListener("session_loaded", () => {
+            this.connectedCallback();
+        }, { once: true });
+        return;
+    }
+    if(session.grade < Utils.GRADE.manager) {
+        this.innerHTML = '';
+        return;
+    }
+
+    const btnClass = this.getAttribute('class') || 'btn btn-primary btn-sm';
+    const label = this.getAttribute('label') || '';
+
+    this.innerHTML = `
+      <button type="button" class="${btnClass}" title="Modifier la facture">
+        <i class="mdi mdi-pencil"></i> ${label}
+      </button>
+    `;
+
+    this.btn = this.querySelector('button');
+    this.btn.addEventListener('click', () => this.showModal());
+  }
+
+  async showModal() {
+    if (typeof bootstrap === 'undefined') {
+      console.warn('Bootstrap JS non trouvé');
+      return;
+    }
+
+    const factureId = this.getAttribute('facture_id');
+    if (!factureId) {
+      console.error('Aucun facture_id fourni');
+      return;
+    }
+
+    // Charger les données de la facture
+    try {
+      this.factureData = await Utils.API.get_facture_by_id(factureId);
+    } catch (error) {
+      console.error('Erreur lors du chargement de la facture:', error);
+      alert('Erreur lors du chargement de la facture');
+      return;
+    }
+
+    if (this.modalEl) {
+      this.modalInstance.show();
+      return;
+    }
+
+    const suffix = Math.random().toString(36).slice(2, 9);
+    this.modalId = `facture-update-modal-${suffix}`;
+
+    const ids = {
+      montant: `fu_montant_${suffix}`,
+      statut: `fu_statut_${suffix}`,
+      label: `fu_label_${suffix}`,
+      submit: `fu_submit_${suffix}`
+    };
+
+    const modalHtml = `
+      <div class="modal fade" id="${this.modalId}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">
+                <i class="mdi mdi-receipt"></i> Modifier la facture #${factureId}
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+              <form id="fu_form_${suffix}">
+                <div class="mb-3">
+                  <label for="${ids.montant}" class="form-label">Montant (€) <i class="mdi mdi-currency-eur"></i></label>
+                  <input type="number" class="form-control" id="${ids.montant}" name="montant" step="0.01" required />
+                </div>
+
+                <div class="mb-3">
+                  <label for="${ids.statut}" class="form-label">Statut <i class="mdi mdi-check-circle"></i></label>
+                  <select class="form-select" id="${ids.statut}" name="statut" required>
+                    <option value="en_attente">En attente</option>
+                    <option value="payee">Payée</option>
+                    <option value="annulee">Annulée</option>
+                  </select>
+                </div>
+
+                <div class="mb-3">
+                  <label for="${ids.label}" class="form-label">Label <i class="mdi mdi-label"></i></label>
+                  <input type="text" class="form-control" id="${ids.label}" name="label" placeholder="Description optionnelle" />
+                </div>
+
+                <div class="d-grid">
+                  <button id="${ids.submit}" type="submit" class="btn btn-success w-100">
+                    <i class="mdi mdi-content-save"></i> Enregistrer les modifications
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = modalHtml;
+    this.modalEl = wrapper.firstElementChild;
+    document.body.appendChild(this.modalEl);
+
+    this.modalInstance = new bootstrap.Modal(this.modalEl, { backdrop: 'static' });
+
+    // Récupération des éléments du formulaire
+    this.form = this.modalEl.querySelector(`#fu_form_${suffix}`);
+    this.inputMontant = this.modalEl.querySelector(`#${ids.montant}`);
+    this.selectStatut = this.modalEl.querySelector(`#${ids.statut}`);
+    this.inputLabel = this.modalEl.querySelector(`#${ids.label}`);
+    this.submitBtn = this.modalEl.querySelector(`#${ids.submit}`);
+
+    // Pré-remplissage avec les données existantes
+    this.populateForm();
+
+    this.form.addEventListener('submit', (e) => this.handleSubmit(e));
+    this.modalEl.addEventListener('hidden.bs.modal', () => this.destroyModal());
+
+    this.modalInstance.show();
+  }
+
+  populateForm() {
+    if (!this.factureData) return;
+
+    this.inputMontant.value = this.factureData.montant || '';
+    this.selectStatut.value = this.factureData.statut || 'en_attente';
+    this.inputLabel.value = this.factureData.label || '';
+  }
+
+  async handleSubmit(e) {
+    e.preventDefault();
+
+    this.submitBtn.disabled = true;
+    const spinner = document.createElement('span');
+    spinner.className = 'spinner-border spinner-border-sm ms-2';
+    this.submitBtn.appendChild(spinner);
+
+    const formData = {
+      montant: parseFloat(this.inputMontant.value),
+      statut: this.selectStatut.value,
+      label: this.inputLabel.value.trim()
+    };
+
+    if (!formData.montant || !formData.statut) {
+      alert('Veuillez remplir tous les champs obligatoires.');
+      this.submitBtn.disabled = false;
+      spinner.remove();
+      return;
+    }
+
+    try {
+      const factureId = this.getAttribute('facture_id');
+      await Utils.API.update_facture(factureId, formData);
+      
+      this.dispatchEvent(new CustomEvent('facture-updated', { 
+        detail: { factureId, ...formData }, 
+        bubbles: true 
+      }));
+      
+      window.location.reload(true);
+      this.modalInstance.hide();
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour:', error);
+      alert('Erreur lors de la mise à jour de la facture.');
+    } finally {
+      this.submitBtn.disabled = false;
+      spinner.remove();
+    }
+  }
+
+  destroyModal() {
+    try {
+      this.form.removeEventListener('submit', this.handleSubmit);
+    } catch (e) {}
+    
+    if (this.modalInstance) {
+      try { this.modalInstance.dispose(); } catch (e) {}
+    }
+    
+    if (this.modalEl && this.modalEl.parentNode) {
+      this.modalEl.parentNode.removeChild(this.modalEl);
+    }
+    
+    this.modalEl = null;
+    this.modalInstance = null;
+    this.factureData = null;
+  }
+}
+class FactureForm extends HTMLElement {
+  constructor() {
+    super();
+    this.modalId = null;
+    this.modalEl = null;
+    this.modalInstance = null;
+  }
+
+  connectedCallback() {
+    if(session == null) {
+        document.addEventListener("session_loaded", () => {
+            this.connectedCallback();
+        });
+        return;
+    }
+    
+    if(session.grade < Utils.GRADE.manager) {
+        this.innerHTML = '';
+        return;
+    }
+
+    let label = this.getAttribute('label') || 'Nouvelle Facture';
+    const btnClass = this.getAttribute('class') || 'btn btn-success';
+    
+    this.innerHTML = `
+      <button type="button" class="${btnClass}">
+        <i class="mdi mdi-plus"></i> <span class="facture-form-label">${label}</span>
+      </button>
+    `;
+    
+    this.btn = this.querySelector('button');
+    this.btn.addEventListener('click', () => this.showModal());
+  }
+
+  async showModal() {
+    if (typeof bootstrap === 'undefined') {
+      console.warn('Bootstrap JS non trouvé');
+      return;
+    }
+
+    if (this.modalEl) {
+      this.modalInstance.show();
+      return;
+    }
+
+    const suffix = Math.random().toString(36).slice(2, 9);
+    this.modalId = `facture-form-modal-${suffix}`;
+
+    const ids = {
+      montant: `ff_montant_${suffix}`,
+      statut: `ff_statut_${suffix}`,
+      label: `ff_label_${suffix}`,
+      submit: `ff_submit_${suffix}`
+    };
+
+    const modalHtml = `
+      <div class="modal fade" id="${this.modalId}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">
+                <i class="mdi mdi-receipt"></i> Créer une nouvelle facture
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+              <form id="ff_form_${suffix}">
+                <div class="mb-3">
+                  <label for="${ids.montant}" class="form-label">Montant (€) <i class="mdi mdi-currency-eur"></i></label>
+                  <input type="number" class="form-control" id="${ids.montant}" name="montant" step="0.01" required />
+                </div>
+
+                <div class="mb-3">
+                  <label for="${ids.statut}" class="form-label">Statut <i class="mdi mdi-check-circle"></i></label>
+                  <select class="form-select" id="${ids.statut}" name="statut" required>
+                    <option value="en_attente" selected>En attente</option>
+                    <option value="payee">Payée</option>
+                    <option value="annulee">Annulée</option>
+                  </select>
+                </div>
+
+                <div class="mb-3">
+                  <label for="${ids.label}" class="form-label">Label <i class="mdi mdi-label"></i></label>
+                  <input type="text" class="form-control" id="${ids.label}" name="label" placeholder="Description optionnelle" />
+                </div>
+
+                <div class="d-grid">
+                  <button id="${ids.submit}" type="submit" class="btn btn-success w-100">
+                    <i class="mdi mdi-content-save"></i> Créer la facture
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = modalHtml;
+    this.modalEl = wrapper.firstElementChild;
+    document.body.appendChild(this.modalEl);
+
+    this.modalInstance = new bootstrap.Modal(this.modalEl, { backdrop: 'static' });
+
+    // Récupération des éléments du formulaire
+    this.form = this.modalEl.querySelector(`#ff_form_${suffix}`);
+    this.inputMontant = this.modalEl.querySelector(`#${ids.montant}`);
+    this.selectStatut = this.modalEl.querySelector(`#${ids.statut}`);
+    this.inputLabel = this.modalEl.querySelector(`#${ids.label}`);
+    this.submitBtn = this.modalEl.querySelector(`#${ids.submit}`);
+
+    this.form.addEventListener('submit', (e) => this.handleSubmit(e));
+    this.modalEl.addEventListener('hidden.bs.modal', () => this.destroyModal());
+
+    this.modalInstance.show();
+  }
+
+  async handleSubmit(e) {
+    e.preventDefault();
+
+    this.submitBtn.disabled = true;
+    const spinner = document.createElement('span');
+    spinner.className = 'spinner-border spinner-border-sm ms-2';
+    this.submitBtn.appendChild(spinner);
+
+    const montant = parseFloat(this.inputMontant.value);
+    const statut = this.selectStatut.value;
+    const label = this.inputLabel.value.trim();
+
+    if (!montant || !statut) {
+      alert('Veuillez remplir tous les champs obligatoires.');
+      this.submitBtn.disabled = false;
+      spinner.remove();
+      return;
+    }
+
+    try {
+      const res = await Utils.API.add_facture(montant, statut, label);
+      
+      if (res && res.success) {
+        this.dispatchEvent(new CustomEvent('facture-created', { 
+          detail: { montant, statut, label }, 
+          bubbles: true 
+        }));
+        window.location.reload(true);
+        this.modalInstance.hide();
+      } else {
+        const err = res && res.error ? res.error : 'Erreur inconnue';
+        alert('Erreur: ' + err);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Une erreur est survenue.');
+    } finally {
+      this.submitBtn.disabled = false;
+      spinner.remove();
+    }
+  }
+
+  destroyModal() {
+    try {
+      this.form.removeEventListener('submit', this.handleSubmit);
+    } catch (e) {}
+    
+    if (this.modalInstance) {
+      try { this.modalInstance.dispose(); } catch (e) {}
+    }
+    
+    if (this.modalEl && this.modalEl.parentNode) {
+      this.modalEl.parentNode.removeChild(this.modalEl);
+    }
+    
+    this.modalEl = null;
+    this.modalInstance = null;
+  }
+}
+
+customElements.define('facture-form', FactureForm);
+customElements.define('facture-table', FactureTable);
+customElements.define('facture-delete', FactureDelete);
+customElements.define('facture-update', FactureUpdate);
+customElements.define('delete-declaration', DeleteDeclaration);
+customElements.define('declaration-table', DeclarationTable);
 customElements.define('user-delete', UserDelete);
 customElements.define('user-form', UserForm);
 customElements.define('delivery-week-table', DeliveryWeekTable);

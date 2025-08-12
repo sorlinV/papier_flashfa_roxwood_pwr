@@ -23,8 +23,10 @@
     <main style="background-color: #f8f9fa;">
 
 
-
-
+    <div class="container">
+      <h2 class="mb-4"><i class="mdi mdi-account-group"></i> Liste des Employés</h2>
+      <users-week-table is_salaire="true" class="table-responsive"></users-week-table>
+    </div>
     </main>
 
   </main>
