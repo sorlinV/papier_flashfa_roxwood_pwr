@@ -20,9 +20,19 @@
     <?php include("includes/header.php") ?>
 
     <!-- Page Content -->
-    <main class="d-flex flex-column justify-content-center align-items-center flex-grow-1 style="background-color: #f8f9fa;">
-      <h1 class="mb-3">Ici prochainement la pages pour les vehicules inspiré de ça</h1>
-      <img class="w-25" src="/public/vehicules.png" alt="" srcset="">
+    <main style="background-color: #f8f9fa;">
+
+    <div class="container">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="mdi mdi-car-multiple"></i> Gestion des Véhicules</h2>
+        <vehicule-form class="btn btn-success">
+          <i class="mdi mdi-plus"></i> Nouveau Véhicule
+        </vehicule-form>
+      </div>
+      
+      <vehicule-table class="table-responsive"></vehicule-table>
+    </div>
+
     </main>
 
   </main>

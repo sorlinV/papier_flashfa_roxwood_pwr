@@ -66,7 +66,9 @@ CREATE TABLE vehicules (
     id INTEGER PRIMARY KEY AUTO_INCREMENT,
     matricule TEXT NOT NULL,
     nom TEXT NOT NULL,
-    is_taken BOOLEAN DEFAULT 0,
+    plaque TEXT NOT NULL,
+    is_taken BOOLEAN DEFAULT 0 NOT NULL,
+    date_taken TIMESTAMP NOT NULL,
     user_id INTEGER NOT NULL,
     date_achat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )

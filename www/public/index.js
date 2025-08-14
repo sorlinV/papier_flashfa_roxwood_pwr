@@ -6,13 +6,11 @@ let session = null;
 Utils.API.get_session().then((user) => {
     user = user[0];
     if(user.err != null) {
-        console.log(user);
         return;
     }
     session = user;
     document.body.style.display = "flex";
     for (let user_name_elem of document.querySelectorAll(".user_name")) {
-        console.log(user);
         user_name_elem.innerHTML = user.name;
     }
     
@@ -145,6 +143,7 @@ class DeclarationForm extends HTMLElement {
 class UsersWeekTable extends HTMLElement {
   constructor() {
     super();
+    this.currentDate = null;
   }
 
   connectedCallback() {
@@ -154,10 +153,15 @@ class UsersWeekTable extends HTMLElement {
         }, { once: true });
         return;
     }
+    
+    // Initialiser la date courante
+    const dateAttr = this.getAttribute("date");
+    this.currentDate = dateAttr ? new Date(dateAttr) : new Date();
+    this.currentDate = this.getMondayOfWeek(this.currentDate);
+    
     this.renderLoading();
     this.loadData()
       .then(data => {
-        console.log(data);
         this.renderTable(data);
       })
       .catch(error => {
@@ -170,9 +174,69 @@ class UsersWeekTable extends HTMLElement {
   }
 
   loadData() {
-    const dateAttr = this.getAttribute("date");
-    const date = dateAttr ? new Date(dateAttr) : new Date();
-    return Utils.API.get_users_data_for_week(date);
+    return Utils.API.get_users_data_for_week(this.currentDate);
+  }
+
+  // Fonction pour obtenir le numéro de semaine
+  getWeekNumber(date) {
+    const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+    const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
+    return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+  }
+
+  // Fonction pour obtenir le lundi de la semaine
+  getMondayOfWeek(date) {
+    const day = date.getDay();
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Ajuster pour que lundi soit le premier jour
+    return new Date(date.setDate(diff));
+  }
+
+  // Fonction pour obtenir le dimanche de la semaine
+  getSundayOfWeek(date) {
+    const monday = this.getMondayOfWeek(new Date(date));
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    return sunday;
+  }
+
+  // Navigation vers la semaine précédente
+  previousWeek() {
+    this.currentDate = new Date(this.currentDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+    this.renderLoading();
+    this.loadData()
+      .then(data => {
+        this.renderTable(data);
+      })
+      .catch(error => {
+        this.innerHTML = `<p class="text-danger">Erreur lors du chargement des données : ${error.message}</p>`;
+      });
+  }
+
+  // Navigation vers la semaine suivante
+  nextWeek() {
+    console.log(new Date(this.currentDate.getTime()) + "\n" + new Date(this.currentDate.getTime() + 7 * 24 * 60 * 60 * 1000));
+    this.currentDate = new Date(this.currentDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+    this.renderLoading();
+    this.loadData()
+      .then(data => {
+        this.renderTable(data);
+      })
+      .catch(error => {
+        this.innerHTML = `<p class="text-danger">Erreur lors du chargement des données : ${error.message}</p>`;
+      });
+  }
+
+  // Retour à la semaine courante
+  goToCurrentWeek() {
+    this.currentDate = new Date();
+    this.renderLoading();
+    this.loadData()
+      .then(data => {
+        this.renderTable(data);
+      })
+      .catch(error => {
+        this.innerHTML = `<p class="text-danger">Erreur lors du chargement des données : ${error.message}</p>`;
+      });
   }
 
   renderTable(data) {
@@ -215,6 +279,12 @@ class UsersWeekTable extends HTMLElement {
       return salaireMax + (parseFloat(fraisEssence) || 0);
     }
 
+    // Calculer les informations de la semaine
+    const weekNumber = this.getWeekNumber(this.currentDate);
+    const monday = this.getMondayOfWeek(this.currentDate);
+    const sunday = this.getSundayOfWeek(this.currentDate);
+    const year = this.currentDate.getFullYear();
+
     const rows = data.map(user => {
       const gradeId = user.grade;
       const salaireMax = salaireMaxGet(gradeId);
@@ -250,7 +320,32 @@ class UsersWeekTable extends HTMLElement {
     this.innerHTML = `
       <div class="table-responsive">
         <table class="table table-striped table-hover table-bordered align-middle" style="font-size: 0.8rem">
-          <thead class="table-primary text-dark">
+          <!-- Header des colonnes -->
+          <thead class="table-dark text-dark">
+            <tr class="${this.getAttribute("is_salaire") != "true" ? "d-none" : ""}">
+              <th colspan="${this.getAttribute("is_salaire") == "true" ? "11" : "9"}" class="p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-light btn-sm" id="previous-week">
+                      <i class="mdi mdi-chevron-left"></i> Semaine précédente
+                    </button>
+                    <button type="button" class="btn btn-light btn-sm" id="current-week">
+                      <i class="mdi mdi-calendar-today"></i> Semaine actuelle
+                    </button>
+                    <button type="button" class="btn btn-outline-light btn-sm" id="next-week">
+                      Semaine suivante <i class="mdi mdi-chevron-right"></i>
+                    </button>
+                  </div>
+                  <div class="text-light fw-bold">
+                    <i class="mdi mdi-calendar-week"></i> Semaine ${weekNumber} - ${year}
+                    <br>
+                    <small class="text-light opacity-75">
+                      Du ${monday.toLocaleDateString('fr-FR')} au ${sunday.toLocaleDateString('fr-FR')}
+                    </small>
+                  </div>
+                </div>
+              </th>
+            </tr>
             <tr>
               <th class="${this.getAttribute("is_salaire") == "true" ? "d-none" : ""}" title="Date d'arrivée">Date d'arrivée <i class="mdi mdi-calendar"></i></th>
               <th class="${this.getAttribute("is_salaire") == "true" ? "d-none" : ""}" title="Matricules">Matricules</th>
@@ -278,12 +373,19 @@ class UsersWeekTable extends HTMLElement {
         </table>
       </div>
     `;
+    let button_previous_week = this.querySelector('#previous-week');
+    button_previous_week.addEventListener('click', this.previousWeek.bind(this));
+    let button_next_week = this.querySelector('#next-week');
+    button_next_week.addEventListener('click', this.nextWeek.bind(this));
+    let button_current_week = this.querySelector('#current-week');
+    button_current_week.addEventListener('click', this.goToCurrentWeek.bind(this));
   }
 }
 class DeliveryWeekTable extends HTMLElement {
   constructor() {
     super();
     this.unitPrice = 37.5;
+    this.currentDate = null;
   }
 
   connectedCallback() {
@@ -293,26 +395,101 @@ class DeliveryWeekTable extends HTMLElement {
         }, { once: true });
         return;
     }
-    const dateStr = this.getAttribute('date') || new Date().toISOString();
-    const date = new Date(dateStr);
+    
+    // Initialiser la date courante
+    const dateAttr = this.getAttribute("date");
+    this.currentDate = dateAttr ? new Date(dateAttr) : new Date();
 
     this.renderLoading();
-
-    Utils.API.get_deliveries_per_ltd_week(date).then(data => {
-      this.renderTable(data);
-    }).catch(err => {
-      this.innerHTML = `<p class="text-danger">Erreur lors du chargement : ${err}</p>`;
-    });
+    this.loadData()
+      .then(data => {
+        this.renderTable(data);
+      })
+      .catch(err => {
+        this.innerHTML = `<p class="text-danger">Erreur lors du chargement : ${err}</p>`;
+      });
   }
 
   renderLoading() {
     this.innerHTML = `<p class="text-muted">Chargement des livraisons globales...</p>`;
   }
 
+  loadData() {
+    return Utils.API.get_deliveries_per_ltd_week(this.currentDate);
+  }
+
+  // Fonction pour obtenir le numéro de semaine
+  getWeekNumber(date) {
+    const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+    const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
+    return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+  }
+
+  // Fonction pour obtenir le lundi de la semaine
+  getMondayOfWeek(date) {
+    const day = date.getDay();
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Ajuster pour que lundi soit le premier jour
+    return new Date(date.setDate(diff));
+  }
+
+  // Fonction pour obtenir le dimanche de la semaine
+  getSundayOfWeek(date) {
+    const monday = this.getMondayOfWeek(new Date(date));
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    return sunday;
+  }
+
+  // Navigation vers la semaine précédente
+  previousWeek() {
+    this.currentDate.setDate(this.currentDate.getDate() - 7);
+    this.renderLoading();
+    this.loadData()
+      .then(data => {
+        this.renderTable(data);
+      })
+      .catch(err => {
+        this.innerHTML = `<p class="text-danger">Erreur lors du chargement : ${err}</p>`;
+      });
+  }
+
+  // Navigation vers la semaine suivante
+  nextWeek() {
+    this.currentDate.setDate(this.currentDate.getDate() + 7);
+    this.renderLoading();
+    this.loadData()
+      .then(data => {
+        this.renderTable(data);
+      })
+      .catch(err => {
+        this.innerHTML = `<p class="text-danger">Erreur lors du chargement : ${err}</p>`;
+      });
+  }
+
+  // Retour à la semaine courante
+  goToCurrentWeek() {
+    this.currentDate = new Date();
+    this.renderLoading();
+    this.loadData()
+      .then(data => {
+        this.renderTable(data);
+      })
+      .catch(err => {
+        this.innerHTML = `<p class="text-danger">Erreur lors du chargement : ${err}</p>`;
+      });
+  }
+
   renderTable(data) {
     const allLtds = Object.keys(Utils.LTD);
     const deliveriesByLtd = {};
 
+    // Calculer les informations de la semaine
+    const weekNumber = this.getWeekNumber(this.currentDate);
+    const monday = this.getMondayOfWeek(new Date(this.currentDate));
+    const sunday = this.getSundayOfWeek(new Date(this.currentDate));
+    const year = this.currentDate.getFullYear();
+
+    let grandTotal = 0;
     const rows = allLtds.map(ltdName => {
       let qtyTotal = 0;
       data.forEach(row => {
@@ -322,12 +499,15 @@ class DeliveryWeekTable extends HTMLElement {
         }
       });
       const qty = deliveriesByLtd[ltdName] || 0;
+      const totalPrice = this.unitPrice * qtyTotal;
+      grandTotal += totalPrice;
+      
       return `
         <tr>
           <td>${ltdName}</td>
           <td class="text-center">${qtyTotal}</td>
           <td class="text-center">${this.unitPrice.toFixed(2)} €</td>
-          <td class="text-center">${(this.unitPrice * qtyTotal).toFixed(2)} €</td>
+          <td class="text-center">${totalPrice.toFixed(2)} €</td>
         </tr>
       `;
     }).join('');
@@ -335,17 +515,54 @@ class DeliveryWeekTable extends HTMLElement {
     this.innerHTML = `
       <div class="table-responsive">
         <table class="table table-hover table-bordered align-middle">
+          <!-- Header de navigation des semaines -->
+          <thead class="table-dark">
+            <tr>
+              <th colspan="4" class="p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-light btn-sm" onclick="this.closest('delivery-week-table').previousWeek()">
+                      <i class="mdi mdi-chevron-left"></i> Semaine précédente
+                    </button>
+                    <button type="button" class="btn btn-light btn-sm" onclick="this.closest('delivery-week-table').goToCurrentWeek()">
+                      <i class="mdi mdi-calendar-today"></i> Semaine actuelle
+                    </button>
+                    <button type="button" class="btn btn-outline-light btn-sm" onclick="this.closest('delivery-week-table').nextWeek()">
+                      Semaine suivante <i class="mdi mdi-chevron-right"></i>
+                    </button>
+                  </div>
+                  <div class="text-light fw-bold">
+                    <i class="mdi mdi-calendar-week"></i> Semaine ${weekNumber} - ${year}
+                    <br>
+                    <small class="text-light opacity-75">
+                      Du ${monday.toLocaleDateString('fr-FR')} au ${sunday.toLocaleDateString('fr-FR')}
+                    </small>
+                  </div>
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <!-- Header des colonnes -->
           <thead class="table-primary">
             <tr>
               <th>LTD <i class="mdi mdi-domain"></i></th>
-              <th>Total Livraisons <i class="mdi mdi-truck-delivery"></i></th>
-              <th>Prix Unitaire <i class="mdi mdi-currency-eur"></i></th>
-              <th>Prix Total <i class="mdi mdi-cash-multiple"></i></th>
+              <th class="text-center">Total Livraisons <i class="mdi mdi-truck-delivery"></i></th>
+              <th class="text-center">Prix Unitaire <i class="mdi mdi-currency-eur"></i></th>
+              <th class="text-center">Prix Total <i class="mdi mdi-cash-multiple"></i></th>
             </tr>
           </thead>
           <tbody>
             ${rows}
           </tbody>
+          <!-- Footer avec total général -->
+          <tfoot class="table-success fw-bold">
+            <tr>
+              <td>TOTAL GÉNÉRAL</td>
+              <td class="text-center">-</td>
+              <td class="text-center">-</td>
+              <td class="text-center">${grandTotal.toFixed(2)} €</td>
+            </tr>
+          </tfoot>
         </table>
       </div>
     `;
@@ -637,7 +854,7 @@ class UserDelete extends HTMLElement {
         }
 
         const confirmMsg = this.getAttribute('confirm') || 'Êtes-vous sûr de vouloir supprimer cet utilisateur ?';
-        if (!confirm(confirmMsg)) return;
+        if (!await Utils.confirmDelete(confirmMsg)) return;
 
         Utils.API.delete_user(discordId).then(()=>{
             window.location.reload(true);
@@ -754,7 +971,7 @@ class DeleteDeclaration extends HTMLElement {
         return;
       }
 
-      if (!confirm(confirmMsg)) return;
+      if (!await Utils.confirmDelete(confirmMsg)) return;
 
       try {
         // Appelle la méthode API adaptée pour supprimer la déclaration par id
@@ -907,7 +1124,7 @@ class FactureDelete extends HTMLElement {
         }
 
         const confirmMsg = this.getAttribute('confirm') || 'Êtes-vous sûr de vouloir supprimer cette facture ?';
-        if (!confirm(confirmMsg)) return;
+        if (!await Utils.confirmDelete(confirmMsg)) return;
 
         try {
             await Utils.API.delete_facture(factureId);
@@ -1305,7 +1522,616 @@ class FactureForm extends HTMLElement {
     this.modalInstance = null;
   }
 }
+class VehiculeTable extends HTMLElement {
+  constructor() {
+    super();
+  }
 
+  connectedCallback() {
+    if (typeof session === 'undefined' || session == null) {
+        document.addEventListener("session_loaded", () => {
+            this.connectedCallback();
+        }, { once: true });
+        return;
+    }
+    
+    this.renderLoading();
+    this.loadData()
+      .then(data => {
+        this.renderTable(data);
+      })
+      .catch(error => {
+        this.innerHTML = `<p class="text-danger">Erreur lors du chargement des véhicules : ${error.message}</p>`;
+      });
+  }
+
+  renderLoading() {
+    this.innerHTML = `<p class="text-muted">Chargement des véhicules...</p>`;
+  }
+
+  loadData() {
+    return Utils.API.get_vehicules();
+  }
+
+  renderTable(data) {
+    if (!data || data.length === 0) {
+      this.innerHTML = `<p class="text-warning">Aucun véhicule trouvé.</p>`;
+      return;
+    }
+
+    const statusBadge = (isTaken, userName) => {
+      if (isTaken == 1) {
+        return `<span class="badge bg-danger">Pris par ${userName || 'Inconnu'}</span>`;
+      }
+      return `<span class="badge bg-success">Disponible</span>`;
+    };
+
+    const actionButtons = (vehicule) => {
+      if (vehicule.is_taken == 1) {
+        // Véhicule pris
+        if (vehicule.user_id == session.id) {
+          // L'utilisateur connecté a pris ce véhicule
+          return `<vehicule-return vehicule_id="${vehicule.id}"></vehicule-return>`;
+        } else {
+          // Quelqu'un d'autre a pris le véhicule
+          return `<span class="text-muted">Indisponible</span>`;
+        }
+      } else {
+        // Véhicule disponible
+        return `<vehicule-take vehicule_id="${vehicule.id}"></vehicule-take>`;
+      }
+    };
+
+    const rows = data.map(vehicule => {
+      return `
+        <tr class="${vehicule.is_taken == 1 ? 'table-warning' : ''}">
+          <td>${vehicule.id}</td>
+          <td>${vehicule.matricule} <i class="mdi mdi-identifier"></i></td>
+          <td>${vehicule.nom} <i class="mdi mdi-car"></i></td>
+          <td>${vehicule.plaque} <i class="mdi mdi-card-text"></i></td>
+          <td class="text-center">${statusBadge(vehicule.is_taken, vehicule.user_name)}</td>
+          <td class="text-center">${vehicule.date_taken ? new Date(vehicule.date_taken).toLocaleString() : ''}</td>
+          <td class="text-center">${new Date(vehicule.date_achat).toLocaleDateString()}</td>
+          <td class="text-center">${actionButtons(vehicule)}</td>
+          <td class="${session.grade < Utils.GRADE.manager ? "d-none" : ""}">
+            <vehicule-update vehicule_id="${vehicule.id}"></vehicule-update>
+          </td>
+          <td class="${session.grade < Utils.GRADE.manager ? "d-none" : ""}">
+            <vehicule-delete vehicule_id="${vehicule.id}"></vehicule-delete>
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    this.innerHTML = `
+      <div class="table-responsive">
+        <table class="table table-striped table-hover table-bordered align-middle">
+          <thead class="table-primary text-dark">
+            <tr>
+              <th>ID</th>
+              <th>Matricule <i class="mdi mdi-identifier"></i></th>
+              <th>Nom <i class="mdi mdi-car"></i></th>
+              <th>Plaque <i class="mdi mdi-card-text"></i></th>
+              <th>Statut <i class="mdi mdi-check-circle"></i></th>
+              <th>Date Prise <i class="mdi mdi-calendar"></i></th>
+              <th>Date Achat <i class="mdi mdi-calendar-plus"></i></th>
+              <th>Actions <i class="mdi mdi-cog"></i></th>
+              <th class="${session.grade < Utils.GRADE.manager ? "d-none" : ""}"><i class="mdi mdi-pencil"></i></th>
+              <th class="${session.grade < Utils.GRADE.manager ? "d-none" : ""}"><i class="mdi mdi-delete"></i></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+}
+
+// Prendre un véhicule
+class VehiculeTake extends HTMLElement {
+  constructor() {
+    super();
+  }
+
+  connectedCallback() {
+    if (typeof session === 'undefined' || session == null) {
+        document.addEventListener("session_loaded", () => {
+            this.connectedCallback();
+        }, { once: true });
+        return;
+    }
+
+    const vehiculeId = this.getAttribute('vehicule_id');
+    const btnClass = this.getAttribute('class') || 'btn btn-success btn-sm';
+
+    this.innerHTML = `
+      <button type="button" class="${btnClass}" title="Prendre le véhicule">
+        <i class="mdi mdi-key"></i> Prendre
+      </button>
+    `;
+
+    this.querySelector('button').addEventListener('click', async () => {
+        if (!vehiculeId) {
+            console.error('Aucun vehicule_id fourni à <vehicule-take>.');
+            return;
+        }
+
+        if (!await Utils.confirm('Voulez-vous prendre ce véhicule ?', 'Confirmation')) return;
+
+        try {
+            await Utils.API.take_vehicule(vehiculeId, session.id);
+            window.location.reload(true);
+        } catch (error) {
+            console.error('Erreur lors de la prise du véhicule:', error);
+            alert('Erreur lors de la prise du véhicule.');
+        }
+    });
+  }
+}
+
+// Rendre un véhicule
+class VehiculeReturn extends HTMLElement {
+  constructor() {
+    super();
+  }
+
+  connectedCallback() {
+    if (typeof session === 'undefined' || session == null) {
+        document.addEventListener("session_loaded", () => {
+            this.connectedCallback();
+        }, { once: true });
+        return;
+    }
+
+    const vehiculeId = this.getAttribute('vehicule_id');
+    const btnClass = this.getAttribute('class') || 'btn btn-warning btn-sm';
+
+    this.innerHTML = `
+      <button type="button" class="${btnClass}" title="Rendre le véhicule">
+        <i class="mdi mdi-key-remove"></i> Rendre
+      </button>
+    `;
+
+    this.querySelector('button').addEventListener('click', async () => {
+        if (!vehiculeId) {
+            console.error('Aucun vehicule_id fourni à <vehicule-return>.');
+            return;
+        }
+
+        if (!await Utils.confirm('Voulez-vous rendre ce véhicule ?', 'Confirmation')) return;
+
+        try {
+            await Utils.API.return_vehicule(vehiculeId);
+            window.location.reload(true);
+        } catch (error) {
+            console.error('Erreur lors du rendu du véhicule:', error);
+            alert('Erreur lors du rendu du véhicule.');
+        }
+    });
+  }
+}
+
+// Formulaire d'ajout de véhicule
+class VehiculeForm extends HTMLElement {
+  constructor() {
+    super();
+    this.modalId = null;
+    this.modalEl = null;
+    this.modalInstance = null;
+  }
+
+  connectedCallback() {
+    if(session == null) {
+        document.addEventListener("session_loaded", () => {
+            this.connectedCallback();
+        });
+        return;
+    }
+    
+    if(session.grade < Utils.GRADE.manager) {
+        this.innerHTML = '';
+        return;
+    }
+
+    let label = this.getAttribute('label') || 'Nouveau Véhicule';
+    const btnClass = this.getAttribute('class') || 'btn btn-success';
+    
+    this.innerHTML = `
+      <button type="button" class="${btnClass}">
+        <i class="mdi mdi-plus"></i> <span class="vehicule-form-label">${label}</span>
+      </button>
+    `;
+    
+    this.btn = this.querySelector('button');
+    this.btn.addEventListener('click', () => this.showModal());
+  }
+
+  async showModal() {
+    if (typeof bootstrap === 'undefined') {
+      console.warn('Bootstrap JS non trouvé');
+      return;
+    }
+
+    if (this.modalEl) {
+      this.modalInstance.show();
+      return;
+    }
+
+    const suffix = Math.random().toString(36).slice(2, 9);
+    this.modalId = `vehicule-form-modal-${suffix}`;
+
+    const ids = {
+      matricule: `vf_matricule_${suffix}`,
+      nom: `vf_nom_${suffix}`,
+      plaque: `vf_plaque_${suffix}`,
+      submit: `vf_submit_${suffix}`
+    };
+
+    const modalHtml = `
+      <div class="modal fade" id="${this.modalId}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">
+                <i class="mdi mdi-car-plus"></i> Ajouter un nouveau véhicule
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+              <form id="vf_form_${suffix}">
+                <div class="mb-3">
+                  <label for="${ids.matricule}" class="form-label">Matricule <i class="mdi mdi-identifier"></i></label>
+                  <input type="text" class="form-control" id="${ids.matricule}" name="matricule" required />
+                </div>
+
+                <div class="mb-3">
+                  <label for="${ids.nom}" class="form-label">Nom du véhicule <i class="mdi mdi-car"></i></label>
+                  <input type="text" class="form-control" id="${ids.nom}" name="nom" required />
+                </div>
+
+                <div class="mb-3">
+                  <label for="${ids.plaque}" class="form-label">Plaque d'immatriculation <i class="mdi mdi-card-text"></i></label>
+                  <input type="text" class="form-control" id="${ids.plaque}" name="plaque" required />
+                </div>
+
+                <div class="d-grid">
+                  <button id="${ids.submit}" type="submit" class="btn btn-success w-100">
+                    <i class="mdi mdi-content-save"></i> Ajouter le véhicule
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = modalHtml;
+    this.modalEl = wrapper.firstElementChild;
+    document.body.appendChild(this.modalEl);
+
+    this.modalInstance = new bootstrap.Modal(this.modalEl, { backdrop: 'static' });
+
+    // Récupération des éléments du formulaire
+    this.form = this.modalEl.querySelector(`#vf_form_${suffix}`);
+    this.inputMatricule = this.modalEl.querySelector(`#${ids.matricule}`);
+    this.inputNom = this.modalEl.querySelector(`#${ids.nom}`);
+    this.inputPlaque = this.modalEl.querySelector(`#${ids.plaque}`);
+    this.submitBtn = this.modalEl.querySelector(`#${ids.submit}`);
+
+    this.form.addEventListener('submit', (e) => this.handleSubmit(e));
+    this.modalEl.addEventListener('hidden.bs.modal', () => this.destroyModal());
+
+    this.modalInstance.show();
+  }
+
+  async handleSubmit(e) {
+    e.preventDefault();
+
+    this.submitBtn.disabled = true;
+    const spinner = document.createElement('span');
+    spinner.className = 'spinner-border spinner-border-sm ms-2';
+    this.submitBtn.appendChild(spinner);
+
+    const matricule = this.inputMatricule.value.trim();
+    const nom = this.inputNom.value.trim();
+    const plaque = this.inputPlaque.value.trim();
+
+    if (!matricule || !nom || !plaque) {
+      alert('Veuillez remplir tous les champs.');
+      this.submitBtn.disabled = false;
+      spinner.remove();
+      return;
+    }
+
+    try {
+      await Utils.API.add_vehicule(matricule, nom, plaque);
+      window.location.reload(true);
+      this.modalInstance.hide();
+    } catch (err) {
+      console.error(err);
+      alert('Une erreur est survenue.');
+    } finally {
+      this.submitBtn.disabled = false;
+      spinner.remove();
+    }
+  }
+
+  destroyModal() {
+    try {
+      this.form.removeEventListener('submit', this.handleSubmit);
+    } catch (e) {}
+    
+    if (this.modalInstance) {
+      try { this.modalInstance.dispose(); } catch (e) {}
+    }
+    
+    if (this.modalEl && this.modalEl.parentNode) {
+      this.modalEl.parentNode.removeChild(this.modalEl);
+    }
+    
+    this.modalEl = null;
+    this.modalInstance = null;
+  }
+}
+
+// Modification de véhicule
+class VehiculeUpdate extends HTMLElement {
+  constructor() {
+    super();
+    this.modalId = null;
+    this.modalEl = null;
+    this.modalInstance = null;
+    this.vehiculeData = null;
+  }
+
+  connectedCallback() {
+    if (typeof session === 'undefined' || session == null) {
+        document.addEventListener("session_loaded", () => {
+            this.connectedCallback();
+        }, { once: true });
+        return;
+    }
+    
+    if(session.grade < Utils.GRADE.manager) {
+        this.innerHTML = '';
+        return;
+    }
+
+    const btnClass = this.getAttribute('class') || 'btn btn-primary btn-sm';
+    const label = this.getAttribute('label') || '';
+
+    this.innerHTML = `
+      <button type="button" class="${btnClass}" title="Modifier le véhicule">
+        <i class="mdi mdi-pencil"></i> ${label}
+      </button>
+    `;
+
+    this.btn = this.querySelector('button');
+    this.btn.addEventListener('click', () => this.showModal());
+  }
+
+  async showModal() {
+    if (typeof bootstrap === 'undefined') {
+      console.warn('Bootstrap JS non trouvé');
+      return;
+    }
+
+    const vehiculeId = this.getAttribute('vehicule_id');
+    if (!vehiculeId) {
+      console.error('Aucun vehicule_id fourni');
+      return;
+    }
+
+    // Charger les données du véhicule
+    try {
+      const data = await Utils.API.get_vehicule_by_id(vehiculeId);
+      this.vehiculeData = data[0];
+    } catch (error) {
+      console.error('Erreur lors du chargement du véhicule:', error);
+      alert('Erreur lors du chargement du véhicule');
+      return;
+    }
+
+    if (this.modalEl) {
+      this.populateForm();
+      this.modalInstance.show();
+      return;
+    }
+
+    const suffix = Math.random().toString(36).slice(2, 9);
+    this.modalId = `vehicule-update-modal-${suffix}`;
+
+    const ids = {
+      matricule: `vu_matricule_${suffix}`,
+      nom: `vu_nom_${suffix}`,
+      plaque: `vu_plaque_${suffix}`,
+      submit: `vu_submit_${suffix}`
+    };
+
+    const modalHtml = `
+      <div class="modal fade" id="${this.modalId}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">
+                <i class="mdi mdi-car-cog"></i> Modifier le véhicule #${vehiculeId}
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+              <form id="vu_form_${suffix}">
+                <div class="mb-3">
+                  <label for="${ids.matricule}" class="form-label">Matricule <i class="mdi mdi-identifier"></i></label>
+                  <input type="text" class="form-control" id="${ids.matricule}" name="matricule" required />
+                </div>
+
+                <div class="mb-3">
+                  <label for="${ids.nom}" class="form-label">Nom du véhicule <i class="mdi mdi-car"></i></label>
+                  <input type="text" class="form-control" id="${ids.nom}" name="nom" required />
+                </div>
+
+                <div class="mb-3">
+                  <label for="${ids.plaque}" class="form-label">Plaque d'immatriculation <i class="mdi mdi-card-text"></i></label>
+                  <input type="text" class="form-control" id="${ids.plaque}" name="plaque" required />
+                </div>
+
+                <div class="d-grid">
+                  <button id="${ids.submit}" type="submit" class="btn btn-success w-100">
+                    <i class="mdi mdi-content-save"></i> Enregistrer les modifications
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = modalHtml;
+    this.modalEl = wrapper.firstElementChild;
+    document.body.appendChild(this.modalEl);
+
+    this.modalInstance = new bootstrap.Modal(this.modalEl, { backdrop: 'static' });
+
+    // Récupération des éléments du formulaire
+    this.form = this.modalEl.querySelector(`#vu_form_${suffix}`);
+    this.inputMatricule = this.modalEl.querySelector(`#${ids.matricule}`);
+    this.inputNom = this.modalEl.querySelector(`#${ids.nom}`);
+    this.inputPlaque = this.modalEl.querySelector(`#${ids.plaque}`);
+    this.submitBtn = this.modalEl.querySelector(`#${ids.submit}`);
+
+    // Pré-remplissage avec les données existantes
+    this.populateForm();
+
+    this.form.addEventListener('submit', (e) => this.handleSubmit(e));
+    this.modalEl.addEventListener('hidden.bs.modal', () => this.destroyModal());
+
+    this.modalInstance.show();
+  }
+
+  populateForm() {
+    if (!this.vehiculeData) return;
+
+    this.inputMatricule.value = this.vehiculeData.matricule || '';
+    this.inputNom.value = this.vehiculeData.nom || '';
+    this.inputPlaque.value = this.vehiculeData.plaque || '';
+  }
+
+  async handleSubmit(e) {
+    e.preventDefault();
+
+    this.submitBtn.disabled = true;
+    const spinner = document.createElement('span');
+    spinner.className = 'spinner-border spinner-border-sm ms-2';
+    this.submitBtn.appendChild(spinner);
+
+    const formData = {
+      matricule: this.inputMatricule.value.trim(),
+      nom: this.inputNom.value.trim(),
+      plaque: this.inputPlaque.value.trim()
+    };
+
+    if (!formData.matricule || !formData.nom || !formData.plaque) {
+      alert('Veuillez remplir tous les champs.');
+      this.submitBtn.disabled = false;
+      spinner.remove();
+      return;
+    }
+
+    try {
+      const vehiculeId = this.getAttribute('vehicule_id');
+      await Utils.API.update_vehicule(vehiculeId, formData);
+      
+      window.location.reload(true);
+      this.modalInstance.hide();
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour:', error);
+      alert('Erreur lors de la mise à jour du véhicule.');
+    } finally {
+      this.submitBtn.disabled = false;
+      spinner.remove();
+    }
+  }
+
+  destroyModal() {
+    try {
+      this.form.removeEventListener('submit', this.handleSubmit);
+    } catch (e) {}
+    
+    if (this.modalInstance) {
+      try { this.modalInstance.dispose(); } catch (e) {}
+    }
+    
+    if (this.modalEl && this.modalEl.parentNode) {
+      this.modalEl.parentNode.removeChild(this.modalEl);
+    }
+    
+    this.modalEl = null;
+    this.modalInstance = null;
+    this.vehiculeData = null;
+  }
+}
+
+// Suppression de véhicule
+class VehiculeDelete extends HTMLElement {
+  constructor() {
+    super();
+  }
+
+  connectedCallback() {
+    if (typeof session === 'undefined' || session == null) {
+        document.addEventListener("session_loaded", () => {
+            this.connectedCallback();
+        }, { once: true });
+        return;
+    }
+    
+    if(session.grade < Utils.GRADE.manager) {
+        this.innerHTML = '';
+        return;
+    }
+
+    const vehiculeId = this.getAttribute('vehicule_id');
+    const btnClass = this.getAttribute('class') || 'btn btn-danger btn-sm';
+    const label = this.getAttribute('label') || '';
+
+    this.innerHTML = `
+      <button type="button" class="${btnClass}" title="Supprimer le véhicule">
+        <i class="mdi mdi-delete"></i> ${label}
+      </button>
+    `;
+
+    this.querySelector('button').addEventListener('click', async () => {
+        if (!vehiculeId) {
+            console.error('Aucun vehicule_id fourni à <vehicule-delete>.');
+            return;
+        }
+
+        if (!await Utils.confirmDelete('Ce véhicule sera définitivement supprimé.', 'ce véhicule')) return;
+
+        try {
+            await Utils.API.delete_vehicule(vehiculeId);
+            window.location.reload(true);
+        } catch (error) {
+            console.error('Erreur lors de la suppression:', error);
+            alert('Erreur lors de la suppression du véhicule.');
+        }
+    });
+  }
+}
+
+// Enregistrement des custom elements
+customElements.define('vehicule-table', VehiculeTable);
+customElements.define('vehicule-take', VehiculeTake);
+customElements.define('vehicule-return', VehiculeReturn);
+customElements.define('vehicule-form', VehiculeForm);
+customElements.define('vehicule-update', VehiculeUpdate);
+customElements.define('vehicule-delete', VehiculeDelete);
 customElements.define('facture-form', FactureForm);
 customElements.define('facture-table', FactureTable);
 customElements.define('facture-delete', FactureDelete);
