@@ -37,35 +37,14 @@ class DeclarationForm extends HTMLElement {
             <select class="form-select" id="type" name="type" required>
             </select>
         `)[0];
-        if(session.grade >= Utils.GRADE.manager) {
-            let options = Utils.htmlToArrayElement(`
-                <option value="bouteille_essence">Bouteille Essence</option>
-                <option value="bidon_sythese">Bidon Synthèse</option>
-                <option value="bidon_essence">Bidon Essence</option>
-                <option value="livraison">Livraison</option>
-            `)
-            select.append(...options);
-        } else if (session.grade >= Utils.GRADE.recolte_novice && session.grade <= Utils.GRADE.recolte_confirme) {
-            let options = Utils.htmlToArrayElement(`
-                <option value="bouteille_essence">Bouteille Essence</option>
-            `)
-            select.append(...options);
-        } else if (session.grade >= Utils.GRADE.production_novice && session.grade <= Utils.GRADE.production_expert) {
-            let options = Utils.htmlToArrayElement(`
-                <option value="bidon_sythese">Bidon Synthèse</option>
-                <option value="bidon_essence">Bidon Essence</option>
-            `)
-            select.append(...options);
-        } else if (session.grade >= Utils.GRADE.livreur_novice && session.grade <= Utils.GRADE.livreur_expert) {
-            let options = Utils.htmlToArrayElement(`
-                <option value="livraison">Livraison</option>
-            `)
-            select.append(...options);
-        }
-        let options = Utils.htmlToArrayElement(`
+          let options = Utils.htmlToArrayElement(`
+              <option value="bouteille_essence">Bouteille Essence</option>
+              <option value="bidon_sythese">Bidon Synthèse</option>
+              <option value="bidon_essence">Bidon Essence</option>
+              <option value="livraison">Livraison</option>
             <option value="frais">Frais Essence</option>
-        `)
-        select.append(...options)
+          `)
+          select.append(...options);
 
         let elems = Utils.htmlToArrayElement(`
             <form id="declarationForm">
@@ -258,19 +237,19 @@ class UsersWeekTable extends HTMLElement {
 
     function salaireMaxGet(gradeId) {
       const salaireMap = {
-        1: 15000,
-        2: 15000,
+        1: 11000,
+        2: 13000,
         3: 15000,
-        4: 15000,
-        5: 15000,
+        4: 11000,
+        5: 13000,
         6: 15000,
-        7: 15000,
-        8: 15000,
+        7: 11000,
+        8: 13000,
         9: 15000,
-        10: 15000,
-        11: 15000,
-        12: 15000,
-        13: 15000
+        10: 18000,
+        11: 18000,
+        12: 20000,
+        13: 20000
       };
       return salaireMap[gradeId] || 0;
     }
